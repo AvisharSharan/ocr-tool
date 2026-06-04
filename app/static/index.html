@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>OCR Tool</title>
+    <link rel="stylesheet" href="/static/styles.css" />
+  </head>
+  <body>
+    <main class="shell">
+      <section class="workspace">
+        <header class="topbar">
+          <div>
+            <h1>OCR Tool</h1>
+            <p>PaddleOCR with local Gemma through Ollama</p>
+          </div>
+          <span id="status" class="status">Ready</span>
+        </header>
+
+        <section class="upload-panel">
+          <label class="file-picker">
+            <input id="file" type="file" accept="image/*,.pdf" />
+            <span>Choose image or PDF</span>
+          </label>
+          <label class="check">
+            <input id="preprocess" type="checkbox" checked />
+            Preprocess image
+          </label>
+          <button id="runOcr">Run OCR</button>
+        </section>
+
+        <section class="grid">
+          <div class="panel">
+            <div class="panel-head">
+              <h2>OCR Text</h2>
+              <button id="copyText" class="secondary">Copy</button>
+            </div>
+            <textarea id="ocrText" spellcheck="false"></textarea>
+          </div>
+
+          <div class="panel">
+            <div class="panel-head">
+              <h2>Chat</h2>
+              <button id="clearChat" class="secondary">Clear</button>
+            </div>
+            <div class="actions">
+              <button data-action="clean">Clean</button>
+              <button data-action="summarize">Summarize</button>
+              <button data-action="extract">Extract JSON</button>
+              <button data-action="pii">Find PII</button>
+            </div>
+            <div id="chatHistory" class="chat-history" aria-live="polite"></div>
+            <form id="chatForm" class="ask-row">
+              <input id="question" placeholder="Ask about the document" />
+              <button id="ask" type="submit">Send</button>
+            </form>
+          </div>
+        </section>
+      </section>
+    </main>
+    <script src="/static/app.js"></script>
+  </body>
+</html>

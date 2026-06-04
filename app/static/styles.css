@@ -1,0 +1,300 @@
+:root {
+  color-scheme: light;
+  --bg: #f4f6f8;
+  --surface: #ffffff;
+  --ink: #18202a;
+  --muted: #5d6b7a;
+  --line: #d7dde4;
+  --accent: #0f766e;
+  --accent-dark: #0b5f59;
+  --danger: #b42318;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+button,
+input,
+textarea {
+  font: inherit;
+}
+
+button {
+  border: 0;
+  border-radius: 6px;
+  background: var(--accent);
+  color: #fff;
+  cursor: pointer;
+  padding: 10px 14px;
+}
+
+button:hover {
+  background: var(--accent-dark);
+}
+
+button.secondary {
+  background: #e8edf2;
+  color: var(--ink);
+}
+
+.shell {
+  min-height: 100vh;
+  padding: 24px;
+}
+
+.workspace {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+h1,
+h2,
+p {
+  margin: 0;
+}
+
+h1 {
+  font-size: 28px;
+}
+
+h2 {
+  font-size: 16px;
+}
+
+.topbar p {
+  margin-top: 4px;
+  color: var(--muted);
+}
+
+.status {
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--muted);
+  min-width: 120px;
+  padding: 8px 12px;
+  text-align: center;
+}
+
+.status.error {
+  color: var(--danger);
+}
+
+.upload-panel,
+.panel {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+}
+
+.upload-panel {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  padding: 14px;
+  margin-bottom: 16px;
+}
+
+.file-picker input {
+  display: none;
+}
+
+.file-picker span {
+  display: inline-block;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 10px 14px;
+  cursor: pointer;
+}
+
+.check {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--muted);
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(340px, 0.8fr);
+  gap: 16px;
+}
+
+.panel {
+  min-height: 640px;
+  display: flex;
+  flex-direction: column;
+}
+
+.panel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  border-bottom: 1px solid var(--line);
+  padding: 12px 14px;
+}
+
+textarea {
+  width: 100%;
+  min-height: 580px;
+  flex: 1;
+  border: 0;
+  resize: vertical;
+  padding: 14px;
+  outline: none;
+  line-height: 1.45;
+}
+
+.actions,
+.ask-row {
+  display: flex;
+  gap: 8px;
+  padding: 12px 14px 0;
+}
+
+.actions {
+  flex-wrap: wrap;
+}
+
+.ask-row input {
+  min-width: 0;
+  flex: 1;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 10px 12px;
+}
+
+.chat-history {
+  flex: 1;
+  margin: 12px 14px 14px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: #f9fbfc;
+  overflow: auto;
+  padding: 12px;
+}
+
+.message {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 12px;
+}
+
+.message.user {
+  align-items: flex-end;
+}
+
+.message.assistant {
+  align-items: flex-start;
+}
+
+.message-label {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.bubble {
+  max-width: min(88%, 640px);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 10px 12px;
+  line-height: 1.45;
+  white-space: pre-wrap;
+}
+
+.bubble p {
+  margin: 0 0 8px;
+}
+
+.bubble p:last-child,
+.bubble ul:last-child,
+.bubble pre:last-child {
+  margin-bottom: 0;
+}
+
+.bubble ul {
+  margin: 0 0 8px 20px;
+  padding: 0;
+}
+
+.bubble li {
+  margin: 3px 0;
+}
+
+.bubble h2,
+.bubble h3,
+.bubble h4 {
+  margin: 0 0 8px;
+  font-size: 15px;
+}
+
+.bubble code {
+  border-radius: 4px;
+  background: #eef2f5;
+  padding: 2px 4px;
+}
+
+.bubble pre {
+  margin: 0 0 8px;
+  overflow: auto;
+  border-radius: 6px;
+  background: #eef2f5;
+  padding: 10px;
+}
+
+.bubble pre code {
+  background: transparent;
+  padding: 0;
+}
+
+.message.user .bubble {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: #fff;
+}
+
+.message.assistant .bubble {
+  background: #fff;
+}
+
+@media (max-width: 860px) {
+  .shell {
+    padding: 14px;
+  }
+
+  .topbar {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .grid {
+    grid-template-columns: 1fr;
+  }
+
+  .panel {
+    min-height: 460px;
+  }
+
+  textarea {
+    min-height: 400px;
+  }
+}
