@@ -7,8 +7,7 @@ Pillow>=11.0,<13.0
 PyMuPDF>=1.25,<2.0
 opencv-python>=4.10,<5.0
 numpy>=1.26,<3.0
-pytesseract>=0.3.13,<1.0
-
-# PaddleOCR is the preferred OCR engine, but PaddleOCR 2.x is not compatible
-# with Python 3.13 environments. Install it in a Python 3.10-3.12 venv.
-paddleocr==2.9.1; python_version < "3.13"
+easyocr>=1.7,<2.0
+torch>=2.0
+torchvision>=0.15
+ninja>=1.11

@@ -1,6 +1,5 @@
 from io import BytesIO
 from pathlib import Path
-import shutil
 from typing import Any
 
 import fitz
@@ -8,6 +7,9 @@ import numpy as np
 from PIL import Image
 
 from app.models import OcrBox, OcrPage, OcrResponse
+
+_READER: Any | None = None
+_MODEL_DIR = Path(__file__).resolve().parents[2] / "models" / "easyocr"
 
 
 def run_ocr(
@@ -26,11 +28,12 @@ def run_ocr(
         if preprocess:
             np_image = _preprocess_image(np_image)
 
-        if reader["engine"] == "paddle":
-            result = reader["client"].ocr(np_image, cls=True)
-            boxes = _parse_paddle_result(result)
-        else:
-            boxes = _run_tesseract(np_image)
+        try:
+            result = reader.readtext(np_image, detail=1, paragraph=False)
+            boxes = _parse_easyocr_result(result)
+        except Exception as exc:
+            raise RuntimeError(f"EasyOCR failed while reading page {index}: {exc}") from exc
+
         page_text = "\n".join(box.text for box in boxes)
         pages.append(OcrPage(page=index, text=page_text, boxes=boxes))
 
@@ -43,32 +46,29 @@ def run_ocr(
 
 
 def _get_reader() -> Any:
-    try:
-        from paddleocr import PaddleOCR
-    except ImportError:
-        try:
-            import pytesseract  # noqa: F401
-        except ImportError as exc:
-            raise RuntimeError(
-                "No OCR engine is installed. Install PaddleOCR in Python 3.10-3.12 "
-                "or install Tesseract plus pytesseract."
-            ) from exc
-        return {"engine": "tesseract", "client": None}
-    except Exception:
-        try:
-            import pytesseract  # noqa: F401
-        except ImportError as exc:
-            raise RuntimeError(
-                "PaddleOCR failed to load and pytesseract is not installed."
-            ) from exc
-        return {"engine": "tesseract", "client": None}
+    global _READER
+    if _READER is not None:
+        return _READER
 
     try:
-        return {"engine": "paddle", "client": PaddleOCR(use_angle_cls=True, lang="en", show_log=False)}
-    except Exception as exc:
+        import easyocr
+    except ImportError as exc:
         raise RuntimeError(
-            "PaddleOCR is installed but could not initialize. Check PaddlePaddle compatibility."
+            "EasyOCR is not installed. Run `python -m pip install easyocr ninja --no-deps`."
         ) from exc
+
+    try:
+        _MODEL_DIR.mkdir(parents=True, exist_ok=True)
+        _READER = easyocr.Reader(
+            ["en"],
+            gpu=False,
+            model_storage_directory=str(_MODEL_DIR),
+            user_network_directory=str(_MODEL_DIR),
+            verbose=False,
+        )
+        return _READER
+    except Exception as exc:
+        raise RuntimeError(f"EasyOCR is installed but could not initialize: {exc}") from exc
 
 
 def _load_images(filename: str, content_type: str, data: bytes) -> list[Image.Image]:
@@ -109,79 +109,25 @@ def _preprocess_image(image: np.ndarray) -> np.ndarray:
     return cv2.cvtColor(normalized, cv2.COLOR_GRAY2RGB)
 
 
-def _parse_paddle_result(result: list[Any]) -> list[OcrBox]:
+def _parse_easyocr_result(result: list[Any]) -> list[OcrBox]:
     boxes: list[OcrBox] = []
-    for page_result in result or []:
-        for line in page_result or []:
-            if len(line) < 2:
-                continue
-            box, recognition = line
-            text, confidence = recognition
-            boxes.append(
-                OcrBox(
-                    text=str(text),
-                    confidence=float(confidence),
-                    box=[[float(x), float(y)] for x, y in box],
-                )
-            )
-    return boxes
-
-
-def _run_tesseract(image: np.ndarray) -> list[OcrBox]:
-    try:
-        import pytesseract
-    except ImportError as exc:
-        raise RuntimeError("pytesseract is not installed.") from exc
-
-    tesseract_cmd = _find_tesseract_binary()
-    if tesseract_cmd:
-        pytesseract.pytesseract.tesseract_cmd = tesseract_cmd
-
-    try:
-        data = pytesseract.image_to_data(image, output_type=pytesseract.Output.DICT)
-    except Exception as exc:
-        raise RuntimeError(
-            "Tesseract OCR failed. Install the Tesseract binary and ensure it is on PATH."
-        ) from exc
-
-    boxes: list[OcrBox] = []
-    for index, text in enumerate(data.get("text", [])):
-        cleaned = str(text).strip()
-        if not cleaned:
+    for item in result or []:
+        if len(item) < 3:
             continue
-        confidence = _safe_confidence(data.get("conf", ["0"])[index])
-        x = float(data.get("left", [0])[index])
-        y = float(data.get("top", [0])[index])
-        w = float(data.get("width", [0])[index])
-        h = float(data.get("height", [0])[index])
+        box, text, confidence = item
         boxes.append(
             OcrBox(
-                text=cleaned,
-                confidence=confidence,
-                box=[[x, y], [x + w, y], [x + w, y + h], [x, y + h]],
+                text=str(text),
+                confidence=float(confidence),
+                box=[[float(x), float(y)] for x, y in _to_list(box)],
             )
         )
     return boxes
 
 
-def _safe_confidence(value: Any) -> float:
-    try:
-        parsed = float(value)
-    except (TypeError, ValueError):
-        return 0.0
-    return max(0.0, min(parsed / 100.0, 1.0))
-
-
-def _find_tesseract_binary() -> str | None:
-    path_value = shutil.which("tesseract")
-    if path_value:
-        return path_value
-
-    common_paths = [
-        Path("C:/Program Files/Tesseract-OCR/tesseract.exe"),
-        Path("C:/Program Files (x86)/Tesseract-OCR/tesseract.exe"),
-    ]
-    for path in common_paths:
-        if path.exists():
-            return str(path)
-    return None
+def _to_list(value: Any) -> list[Any]:
+    if value is None:
+        return []
+    if hasattr(value, "tolist"):
+        return value.tolist()
+    return list(value)
