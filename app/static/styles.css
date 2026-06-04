@@ -19,6 +19,7 @@ body {
   background: var(--bg);
   color: var(--ink);
   font-family: Arial, Helvetica, sans-serif;
+  overflow: hidden;
 }
 
 button,
@@ -46,13 +47,18 @@ button.secondary {
 }
 
 .shell {
-  min-height: 100vh;
+  height: 100vh;
+  overflow: hidden;
   padding: 24px;
 }
 
 .workspace {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
   max-width: 1200px;
   margin: 0 auto;
+  min-height: 0;
 }
 
 .topbar {
@@ -135,12 +141,15 @@ h2 {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(340px, 0.8fr);
   gap: 16px;
+  flex: 1;
+  min-height: 0;
 }
 
 .panel {
-  min-height: 640px;
+  min-height: 0;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
 }
 
 .panel-head {
@@ -152,15 +161,119 @@ h2 {
   padding: 12px 14px;
 }
 
+.panel-tools {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.segmented {
+  display: inline-flex;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+}
+
+.segmented button {
+  border-radius: 0;
+  background: #fff;
+  color: var(--muted);
+  padding: 8px 10px;
+}
+
+.segmented button.active {
+  background: var(--accent);
+  color: #fff;
+}
+
+.hidden {
+  display: none !important;
+}
+
 textarea {
   width: 100%;
-  min-height: 580px;
   flex: 1;
+  min-height: 0;
   border: 0;
   resize: vertical;
   padding: 14px;
   outline: none;
   line-height: 1.45;
+  overflow: auto;
+}
+
+.ocr-formatted {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: 14px;
+  line-height: 1.5;
+}
+
+.empty-doc {
+  color: var(--muted);
+}
+
+.ocr-page {
+  border-bottom: 1px solid var(--line);
+  padding-bottom: 16px;
+  margin-bottom: 16px;
+}
+
+.ocr-page:last-child {
+  border-bottom: 0;
+  margin-bottom: 0;
+  padding-bottom: 0;
+}
+
+.page-label {
+  color: var(--muted);
+  font-size: 12px;
+  margin-bottom: 10px;
+}
+
+.ocr-page h3 {
+  margin: 0 0 10px;
+  font-size: 18px;
+}
+
+.ocr-page p {
+  margin: 0 0 10px;
+}
+
+.ocr-page dl {
+  display: grid;
+  grid-template-columns: minmax(120px, 0.42fr) minmax(0, 1fr);
+  gap: 8px;
+  margin: 0 0 8px;
+  border-bottom: 1px solid #eef2f5;
+  padding-bottom: 8px;
+}
+
+.ocr-page dt {
+  color: var(--muted);
+  font-weight: 700;
+}
+
+.ocr-page dd {
+  margin: 0;
+}
+
+.ocr-table-wrap {
+  overflow: auto;
+  margin: 10px 0;
+}
+
+.ocr-table-wrap table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.ocr-table-wrap td {
+  border: 1px solid var(--line);
+  padding: 7px 8px;
+  vertical-align: top;
 }
 
 .actions,
@@ -184,6 +297,7 @@ textarea {
 
 .chat-history {
   flex: 1;
+  min-height: 0;
   margin: 12px 14px 14px;
   border: 1px solid var(--line);
   border-radius: 6px;
@@ -277,7 +391,14 @@ textarea {
 }
 
 @media (max-width: 860px) {
+  body {
+    overflow: auto;
+  }
+
   .shell {
+    height: auto;
+    min-height: 100vh;
+    overflow: visible;
     padding: 14px;
   }
 
@@ -288,13 +409,24 @@ textarea {
 
   .grid {
     grid-template-columns: 1fr;
+    min-height: auto;
   }
 
   .panel {
-    min-height: 460px;
+    height: 520px;
+    min-height: 0;
   }
 
   textarea {
-    min-height: 400px;
+    min-height: 0;
+  }
+
+  .ocr-formatted {
+    min-height: 0;
+  }
+
+  .panel-head {
+    align-items: flex-start;
+    flex-direction: column;
   }
 }

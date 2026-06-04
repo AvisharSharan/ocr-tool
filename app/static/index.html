@@ -33,9 +33,16 @@
           <div class="panel">
             <div class="panel-head">
               <h2>OCR Text</h2>
-              <button id="copyText" class="secondary">Copy</button>
+              <div class="panel-tools">
+                <div class="segmented" aria-label="OCR view">
+                  <button id="showFormatted" class="active" type="button">Formatted</button>
+                  <button id="showRaw" type="button">Raw</button>
+                </div>
+                <button id="copyText" class="secondary">Copy</button>
+              </div>
             </div>
-            <textarea id="ocrText" spellcheck="false"></textarea>
+            <div id="ocrFormatted" class="ocr-formatted"></div>
+            <textarea id="ocrText" class="hidden" spellcheck="false"></textarea>
           </div>
 
           <div class="panel">

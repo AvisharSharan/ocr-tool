@@ -2,6 +2,9 @@ const fileInput = document.querySelector("#file");
 const preprocessInput = document.querySelector("#preprocess");
 const runOcrButton = document.querySelector("#runOcr");
 const ocrText = document.querySelector("#ocrText");
+const ocrFormatted = document.querySelector("#ocrFormatted");
+const showFormattedButton = document.querySelector("#showFormatted");
+const showRawButton = document.querySelector("#showRaw");
 const chatHistoryEl = document.querySelector("#chatHistory");
 const statusBadge = document.querySelector("#status");
 const questionInput = document.querySelector("#question");
@@ -117,6 +120,121 @@ function escapeHtml(value) {
     .replace(/'/g, "&#039;");
 }
 
+function setOcrView(view) {
+  const formatted = view === "formatted";
+  ocrFormatted.classList.toggle("hidden", !formatted);
+  ocrText.classList.toggle("hidden", formatted);
+  showFormattedButton.classList.toggle("active", formatted);
+  showRawButton.classList.toggle("active", !formatted);
+  if (formatted) {
+    ocrFormatted.innerHTML = formatOcrDocument(ocrText.value);
+  }
+}
+
+function formatOcrDocument(text) {
+  const pages = text.trim() ? text.split(/\n{3,}/) : [];
+  if (!pages.length) {
+    return '<div class="empty-doc">Run OCR to view formatted text.</div>';
+  }
+
+  return pages
+    .map((page, index) => formatOcrPage(page, pages.length > 1 ? index + 1 : null))
+    .join("");
+}
+
+function formatOcrPage(pageText, pageNumber) {
+  const lines = pageText
+    .split(/\n+/)
+    .map((line) => line.trim())
+    .filter(Boolean);
+
+  const blocks = [];
+  let tableRows = [];
+  let paragraph = [];
+
+  function flushParagraph() {
+    if (paragraph.length) {
+      blocks.push(`<p>${paragraph.map(escapeHtml).join(" ")}</p>`);
+      paragraph = [];
+    }
+  }
+
+  function flushTable() {
+    if (tableRows.length) {
+      blocks.push(renderOcrTable(tableRows));
+      tableRows = [];
+    }
+  }
+
+  for (const line of lines) {
+    if (isHeadingLine(line)) {
+      flushParagraph();
+      flushTable();
+      blocks.push(`<h3>${escapeHtml(line)}</h3>`);
+      continue;
+    }
+
+    if (isKeyValueLine(line)) {
+      flushParagraph();
+      flushTable();
+      const [key, ...rest] = line.split(":");
+      blocks.push(
+        `<dl><dt>${escapeHtml(key.trim())}</dt><dd>${escapeHtml(rest.join(":").trim())}</dd></dl>`
+      );
+      continue;
+    }
+
+    if (isTableLikeLine(line)) {
+      flushParagraph();
+      tableRows.push(line);
+      continue;
+    }
+
+    flushTable();
+    paragraph.push(line);
+  }
+
+  flushParagraph();
+  flushTable();
+
+  const label = pageNumber ? `<div class="page-label">Page ${pageNumber}</div>` : "";
+  return `<article class="ocr-page">${label}${blocks.join("")}</article>`;
+}
+
+function renderOcrTable(rows) {
+  const body = rows
+    .map((row) => {
+      const cells = splitOcrRow(row)
+        .map((cell) => `<td>${escapeHtml(cell)}</td>`)
+        .join("");
+      return `<tr>${cells}</tr>`;
+    })
+    .join("");
+  return `<div class="ocr-table-wrap"><table>${body}</table></div>`;
+}
+
+function splitOcrRow(row) {
+  const parts = row.split(/\s{2,}|\t+/).map((part) => part.trim()).filter(Boolean);
+  return parts.length > 1 ? parts : [row];
+}
+
+function isHeadingLine(line) {
+  const words = line.split(/\s+/);
+  const mostlyUpper = line === line.toUpperCase() && /[A-Z]/.test(line);
+  return line.length <= 80 && words.length <= 8 && (mostlyUpper || /^[A-Z][A-Za-z ]+$/.test(line));
+}
+
+function isKeyValueLine(line) {
+  return /^[A-Za-z][A-Za-z0-9 /().-]{1,40}:\s*\S+/.test(line);
+}
+
+function isTableLikeLine(line) {
+  const hasWideSpacing = /\S\s{2,}\S/.test(line);
+  const hasAmount = /(?:Rs\.?|INR|USD|\$)?\s*\d+(?:[,.]\d{2})/.test(line);
+  const hasManyNumbers = (line.match(/\d+/g) || []).length >= 2;
+  return hasWideSpacing || (hasAmount && hasManyNumbers);
+}
+
 function formatPayload(data) {
   if (typeof data.text === "string") return data.text;
   if (typeof data.summary === "string") return data.summary;
@@ -142,6 +260,8 @@ runOcrButton.addEventListener("click", async () => {
     const data = await response.json();
     if (!response.ok) throw new Error(data.detail || "OCR failed");
     ocrText.value = data.text || "";
+    ocrFormatted.innerHTML = formatOcrDocument(ocrText.value);
+    setOcrView("formatted");
     addMessage("assistant", `OCR complete: ${data.filename}, ${data.page_count} page(s).`);
     setStatus("OCR done");
   } catch (error) {
@@ -156,6 +276,13 @@ document.querySelector("#copyText").addEventListener("click", async () => {
   await navigator.clipboard.writeText(ocrText.value);
   setStatus("Copied");
 });
+
+ocrText.addEventListener("input", () => {
+  ocrFormatted.innerHTML = formatOcrDocument(ocrText.value);
+});
+
+showFormattedButton.addEventListener("click", () => setOcrView("formatted"));
+showRawButton.addEventListener("click", () => setOcrView("raw"));
 
 document.querySelectorAll("[data-action]").forEach((button) => {
   button.addEventListener("click", async () => {
