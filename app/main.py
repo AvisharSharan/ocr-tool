@@ -1,3 +1,5 @@
+import logging
+
 from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
@@ -11,6 +13,8 @@ from app.services.ai import (
     answer_question,
 )
 from app.services.ocr import run_ocr
+
+logger = logging.getLogger(__name__)
 
 app = FastAPI(title="OCR Tool", version="0.1.0")
 app.mount("/static", StaticFiles(directory="app/static"), name="static")
@@ -46,36 +50,52 @@ async def ocr_endpoint(
             data=data,
             preprocess=preprocess,
         )
-    except RuntimeError as exc:
+    except Exception as exc:
+        logger.exception("OCR request failed")
         raise HTTPException(status_code=500, detail=str(exc)) from exc
 
 
 @app.post("/api/ai/clean")
 def clean_endpoint(request: AiTextRequest) -> dict[str, str]:
-    return {"text": clean_text(request.text)}
+    try:
+        return {"text": clean_text(request.text)}
+    except RuntimeError as exc:
+        raise HTTPException(status_code=500, detail=str(exc)) from exc
 
 
 @app.post("/api/ai/summarize")
 def summarize_endpoint(request: AiTextRequest) -> dict[str, str]:
-    return {"summary": summarize_text(request.text)}
+    try:
+        return {"summary": summarize_text(request.text)}
+    except RuntimeError as exc:
+        raise HTTPException(status_code=500, detail=str(exc)) from exc
 
 
 @app.post("/api/ai/extract")
 def extract_endpoint(request: AiTextRequest) -> dict:
-    return extract_fields(request.text)
+    try:
+        return extract_fields(request.text)
+    except RuntimeError as exc:
+        raise HTTPException(status_code=500, detail=str(exc)) from exc
 
 
 @app.post("/api/ai/pii")
 def pii_endpoint(request: AiTextRequest) -> dict:
-    return detect_sensitive_info(request.text)
+    try:
+        return detect_sensitive_info(request.text)
+    except RuntimeError as exc:
+        raise HTTPException(status_code=500, detail=str(exc)) from exc
 
 
 @app.post("/api/ai/ask")
 def ask_endpoint(request: AskRequest) -> dict[str, str]:
-    return {
-        "answer": answer_question(
-            request.text,
-            request.question,
-            [{"role": item.role, "content": item.content} for item in request.history],
-        )
-    }
+    try:
+        return {
+            "answer": answer_question(
+                request.text,
+                request.question,
+                [{"role": item.role, "content": item.content} for item in request.history],
+            )
+        }
+    except RuntimeError as exc:
+        raise HTTPException(status_code=500, detail=str(exc)) from exc

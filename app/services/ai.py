@@ -5,14 +5,14 @@ from typing import Any
 import requests
 
 OLLAMA_URL = "http://localhost:11434/api/generate"
-MODEL = "gemma3:1b"
+MODEL = "qwen2.5:7b"
 DIRECTIVE = (
     "Be concise and direct. Answer only what was asked. "
     "Do not add follow-up questions, recommendations, disclaimers, or extra commentary."
 )
 
 
-def ask_gemma(prompt: str, *, temperature: float = 0.1) -> str:
+def ask_llm(prompt: str, *, temperature: float = 0.1) -> str:
     try:
         response = requests.post(
             OLLAMA_URL,
@@ -27,7 +27,7 @@ def ask_gemma(prompt: str, *, temperature: float = 0.1) -> str:
         response.raise_for_status()
     except requests.RequestException as exc:
         raise RuntimeError(
-            "Could not reach Ollama. Make sure Ollama is running and gemma3:1b is pulled."
+            f"Could not reach Ollama. Make sure Ollama is running and {MODEL} is pulled."
         ) from exc
 
     return response.json().get("response", "").strip()
@@ -45,7 +45,7 @@ Return only the cleaned text.
 OCR text:
 {text}
 """
-    return ask_gemma(prompt)
+    return ask_llm(prompt)
 
 
 def summarize_text(text: str) -> str:
@@ -58,7 +58,7 @@ dates, amounts, names, and action items present in the text.
 OCR text:
 {text}
 """
-    return ask_gemma(prompt)
+    return ask_llm(prompt)
 
 
 def extract_fields(text: str) -> dict[str, Any]:
@@ -139,12 +139,12 @@ Document excerpts:
 Question:
 {question}
 """
-    return ask_gemma(prompt)
+    return ask_llm(prompt)
 
 
 def _json_from_model(prompt: str, fallback: dict[str, Any]) -> dict[str, Any]:
     for attempt in range(2):
-        response = ask_gemma(prompt if attempt == 0 else _repair_prompt(response))
+        response = ask_llm(prompt if attempt == 0 else _repair_prompt(response))
         try:
             parsed = json.loads(_strip_json_noise(response))
         except json.JSONDecodeError:

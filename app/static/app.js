@@ -24,9 +24,17 @@ async function postJson(url, payload) {
     body: JSON.stringify(payload),
   });
 
-  const data = await response.json();
+  return readResponse(response);
+}
+
+async function readResponse(response) {
+  const contentType = response.headers.get("content-type") || "";
+  const data = contentType.includes("application/json")
+    ? await response.json()
+    : { detail: await response.text() };
+
   if (!response.ok) {
-    throw new Error(data.detail || "Request failed");
+    throw new Error(data.detail || response.statusText || "Request failed");
   }
   return data;
 }
@@ -40,7 +48,7 @@ function addMessage(role, content) {
 
   const label = document.createElement("span");
   label.className = "message-label";
-  label.textContent = role === "user" ? "You" : "Gemma";
+  label.textContent = role === "user" ? "You" : "Qwen";
 
   const bubble = document.createElement("div");
   bubble.className = "bubble";
@@ -257,8 +265,7 @@ runOcrButton.addEventListener("click", async () => {
   runOcrButton.disabled = true;
   try {
     const response = await fetch("/api/ocr", { method: "POST", body: form });
-    const data = await response.json();
-    if (!response.ok) throw new Error(data.detail || "OCR failed");
+    const data = await readResponse(response);
     ocrText.value = data.text || "";
     ocrFormatted.innerHTML = formatOcrDocument(ocrText.value);
     setOcrView("formatted");
