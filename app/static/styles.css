@@ -490,6 +490,24 @@ textarea {
   white-space: pre-wrap;
 }
 
+.typing-bubble {
+  min-width: 46px;
+  color: var(--ink-2);
+}
+
+.typing-dots span {
+  display: inline-block;
+  animation: typing-dot 1s infinite ease-in-out;
+}
+
+.typing-dots span:nth-child(2) { animation-delay: .15s; }
+.typing-dots span:nth-child(3) { animation-delay: .3s; }
+
+@keyframes typing-dot {
+  0%, 60%, 100% { opacity: .25; transform: translateY(0); }
+  30% { opacity: 1; transform: translateY(-1px); }
+}
+
 .bubble p { margin: 0 0 7px; }
 .bubble p:last-child, .bubble ul:last-child, .bubble pre:last-child { margin-bottom: 0; }
 .bubble h2, .bubble h3, .bubble h4 { font-family: var(--display); font-size: 13.5px; font-weight: 700; margin: 0 0 6px; color: var(--ink); }
@@ -539,6 +557,55 @@ textarea {
 }
 .send-btn:hover { opacity: .88; transform: scale(1.05); }
 .send-btn:active { transform: scale(.95); }
+
+/* ── Panel loading overlays ──────────────────── */
+.panel { position: relative; }
+
+.panel::after {
+  content: '';
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  transition: opacity .3s ease;
+  z-index: 10;
+  border-radius: 0;
+}
+
+@keyframes border-travel {
+  to { transform: rotate(360deg); }
+}
+
+.panel--scanning::after {
+  inset: -50%;
+  opacity: 1;
+  background: conic-gradient(
+    from 0deg,
+    transparent 0deg,
+    transparent 55deg,
+    rgba(245,158,11,0.16) 82deg,
+    var(--accent) 105deg,
+    rgba(245,158,11,0.16) 128deg,
+    transparent 155deg,
+    transparent 360deg
+  );
+  animation: border-travel 1.6s linear infinite;
+  z-index: 9;
+}
+
+.panel--scanning::before {
+  content: '';
+  pointer-events: none;
+  position: absolute;
+  inset: 1px;
+  background: var(--bg);
+  z-index: 10;
+}
+
+.panel--scanning > * {
+  position: relative;
+  z-index: 11;
+}
 
 /* ── Utility ─────────────────────────────────── */
 .hidden { display: none !important; }

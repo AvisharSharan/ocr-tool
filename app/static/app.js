@@ -12,6 +12,38 @@ const chatForm = document.querySelector("#chatForm");
 const clearChatButton = document.querySelector("#clearChat");
 const chatHistory = [];
 
+const ocrPanel = document.querySelector(".panel:not(.panel--chat)");
+let thinkingNode = null;
+
+function setScanning(active) {
+  ocrPanel.classList.toggle("panel--scanning", active);
+}
+
+function setThinking(active) {
+  if (active && !thinkingNode) {
+    thinkingNode = document.createElement("div");
+    thinkingNode.className = "message assistant message--typing";
+
+    const label = document.createElement("span");
+    label.className = "message-label";
+    label.textContent = "Qwen";
+
+    const bubble = document.createElement("div");
+    bubble.className = "bubble typing-bubble";
+    bubble.innerHTML = '<span class="typing-dots"><span>.</span><span>.</span><span>.</span></span>';
+
+    thinkingNode.append(label, bubble);
+    chatHistoryEl.appendChild(thinkingNode);
+    chatHistoryEl.scrollTop = chatHistoryEl.scrollHeight;
+    return;
+  }
+
+  if (!active && thinkingNode) {
+    thinkingNode.remove();
+    thinkingNode = null;
+  }
+}
+
 function setStatus(message, error = false) {
   statusBadge.textContent = message;
   statusBadge.classList.toggle("error", error);
@@ -263,6 +295,7 @@ runOcrButton.addEventListener("click", async () => {
 
   setStatus("Running OCR");
   runOcrButton.disabled = true;
+  setScanning(true);
   try {
     const response = await fetch("/api/ocr", { method: "POST", body: form });
     const data = await readResponse(response);
@@ -276,6 +309,7 @@ runOcrButton.addEventListener("click", async () => {
     addMessage("assistant", error.message);
   } finally {
     runOcrButton.disabled = false;
+    setScanning(false);
   }
 });
 
@@ -302,6 +336,7 @@ document.querySelectorAll("[data-action]").forEach((button) => {
     addMessage("user", button.textContent);
     setStatus("AI running");
     button.disabled = true;
+    setThinking(true);
     try {
       const data = await postJson(`/api/ai/${action}`, { text: ocrText.value });
       addMessage("assistant", formatPayload(data));
@@ -311,6 +346,7 @@ document.querySelectorAll("[data-action]").forEach((button) => {
       addMessage("assistant", error.message);
     } finally {
       button.disabled = false;
+      setThinking(false);
     }
   });
 });
@@ -326,6 +362,7 @@ chatForm.addEventListener("submit", async (event) => {
   addMessage("user", question);
   questionInput.value = "";
   setStatus("AI running");
+  setThinking(true);
   try {
     const data = await postJson("/api/ai/ask", {
       text: ocrText.value,
@@ -337,6 +374,8 @@ chatForm.addEventListener("submit", async (event) => {
   } catch (error) {
     setStatus("AI error", true);
     addMessage("assistant", error.message);
+  } finally {
+    setThinking(false);
   }
 });
 
